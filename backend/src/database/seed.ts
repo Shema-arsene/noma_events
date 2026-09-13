@@ -455,7 +455,7 @@ export async function seedDatabase(): Promise<void> {
 /* istanbul ignore next -- CLI entrypoint, exercised manually via `npm run seed` */
 if (require.main === module) {
   ;(async () => {
-    const { connectDatabase, disconnectDatabase } = await import("./connection")
+    const { connectDatabase, disconnectDatabase } = await import("./connection.js")
     await connectDatabase()
     await seedDatabase()
     await disconnectDatabase()

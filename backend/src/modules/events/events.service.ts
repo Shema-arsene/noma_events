@@ -158,8 +158,8 @@ export async function cancelEvent(eventId: string, requester: UserDocument) {
 
   // Notify ticket holders and release pending reservations. Lazy-imported to
   // keep this module free of a circular dependency (both modules reference events).
-  const { cancelTicketsForEvent } = await import("../tickets/tickets.service");
-  const { cancelPendingOrdersForEvent } = await import("../orders/orders.service");
+  const { cancelTicketsForEvent } = await import("../tickets/tickets.service.js");
+  const { cancelPendingOrdersForEvent } = await import("../orders/orders.service.js");
   await Promise.all([cancelTicketsForEvent(event._id.toString()), cancelPendingOrdersForEvent(event._id.toString())]);
 
   return getEventByIdForOwner(eventId, requester);

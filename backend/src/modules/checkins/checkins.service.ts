@@ -67,7 +67,7 @@ async function isAuthorizedForEvent(eventId: string, staffUser: UserDocument): P
   if (assignment) return true;
 
   // Organizer owner scanning their own event directly.
-  const { OrganizerModel } = await import("../organizers/organizer.model");
+  const { OrganizerModel } = await import("../organizers/organizer.model.js");
   const organizer = await OrganizerModel.findById(event.organizerId);
   return organizer?.ownerUserId.toString() === staffUser._id.toString();
 }
@@ -167,7 +167,7 @@ export async function getAttendanceCount(eventId: string, requester: UserDocumen
 
 /** Events the current user is allowed to scan: their own organizer's events, plus any explicit staff assignments. */
 export async function listAssignedEvents(user: UserDocument) {
-  const { OrganizerModel } = await import("../organizers/organizer.model");
+  const { OrganizerModel } = await import("../organizers/organizer.model.js");
 
   const [ownedOrganizers, assignments] = await Promise.all([
     OrganizerModel.find({ ownerUserId: user._id }).select("_id"),

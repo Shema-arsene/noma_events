@@ -97,8 +97,8 @@ export async function adminCancelEvent(eventId: string, actorId: string) {
   event.cancelledAt = new Date();
   await event.save();
 
-  const { cancelTicketsForEvent } = await import("../tickets/tickets.service");
-  const { cancelPendingOrdersForEvent } = await import("../orders/orders.service");
+  const { cancelTicketsForEvent } = await import("../tickets/tickets.service.js");
+  const { cancelPendingOrdersForEvent } = await import("../orders/orders.service.js");
   await Promise.all([cancelTicketsForEvent(eventId), cancelPendingOrdersForEvent(eventId)]);
 
   await AuditLogModel.create({ actorId, action: "EVENT_CANCELLED_BY_ADMIN", entityType: "Event", entityId: eventId });
