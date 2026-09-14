@@ -4,31 +4,57 @@
 // hand when request shapes change.
 import { z } from "zod";
 
+// A handful of schemas below carry user-facing validation messages. Since this
+// module is imported outside of React (e.g. for type inference via z.infer)
+// as well as inside client components, the messages are produced by factory
+// functions that accept a translator (pass `useTranslations("validation")`
+// from the component using the schema with zodResolver). DEFAULT_MESSAGES
+// backs the module-level schema instances used purely for `z.infer` typing.
+const DEFAULT_MESSAGES: Record<string, string> = {
+  nameMinLength: "Le nom doit contenir au moins 2 caractères",
+  invalidEmail: "Adresse e-mail invalide",
+  invalidPhone: "Numéro de téléphone invalide",
+  passwordMinLength: "Le mot de passe doit contenir au moins 8 caractères",
+  passwordRequired: "Mot de passe requis",
+  salesEndAfterStart: "La date de fin des ventes doit être après la date de début",
+  categoryRequired: "Catégorie requise",
+  endAfterStart: "La date de fin doit être après la date de début",
+  atLeastOneTicketType: "Au moins un type de billet est requis",
+};
+
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
 
-export const registerSchema = z.object({
-  name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères").max(120),
-  email: z.string().trim().toLowerCase().email("Adresse e-mail invalide"),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[0-9\s-]{6,20}$/u, "Numéro de téléphone invalide")
-    .optional()
-    .or(z.literal("")),
-  password: z
-    .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .max(128),
-});
+/** Translator function shape accepted by the schema factories below — pass `useTranslations("validation")`. */
+type Translate = (key: string) => string;
+
+const registerSchema = createRegisterSchema((key) => DEFAULT_MESSAGES[key]);
 export type RegisterInput = z.infer<typeof registerSchema>;
 
-export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Adresse e-mail invalide"),
-  password: z.string().min(1, "Mot de passe requis"),
-});
+export function createRegisterSchema(t: Translate) {
+  return z.object({
+    name: z.string().trim().min(2, t("nameMinLength")).max(120),
+    email: z.string().trim().toLowerCase().email(t("invalidEmail")),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^\+?[0-9\s-]{6,20}$/u, t("invalidPhone"))
+      .optional()
+      .or(z.literal("")),
+    password: z.string().min(8, t("passwordMinLength")).max(128),
+  });
+}
+
+const loginSchema = createLoginSchema((key) => DEFAULT_MESSAGES[key]);
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export function createLoginSchema(t: Translate) {
+  return z.object({
+    email: z.string().trim().toLowerCase().email(t("invalidEmail")),
+    password: z.string().min(1, t("passwordRequired")),
+  });
+}
 
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, "Jeton de rafraîchissement requis"),
@@ -82,48 +108,60 @@ const ticketTypeObjectSchema = z.object({
   active: z.boolean().default(true),
 });
 
-export const ticketTypeSchema = ticketTypeObjectSchema.refine(
-  (data) => data.salesEndAt > data.salesStartAt,
-  { message: "La date de fin des ventes doit être après la date de début", path: ["salesEndAt"] },
-);
+const ticketTypeSchema = createTicketTypeSchema((key) => DEFAULT_MESSAGES[key]);
 export type TicketTypeInput = z.infer<typeof ticketTypeSchema>;
 
-export const updateTicketTypeSchema = ticketTypeObjectSchema.partial().refine(
-  (data) => !data.salesStartAt || !data.salesEndAt || data.salesEndAt > data.salesStartAt,
-  { message: "La date de fin des ventes doit être après la date de début", path: ["salesEndAt"] },
-);
+export function createTicketTypeSchema(t: Translate) {
+  return ticketTypeObjectSchema.refine((data) => data.salesEndAt > data.salesStartAt, {
+    message: t("salesEndAfterStart"),
+    path: ["salesEndAt"],
+  });
+}
+
+const updateTicketTypeSchema = createUpdateTicketTypeSchema((key) => DEFAULT_MESSAGES[key]);
 export type UpdateTicketTypeInput = z.infer<typeof updateTicketTypeSchema>;
+
+export function createUpdateTicketTypeSchema(t: Translate) {
+  return ticketTypeObjectSchema.partial().refine(
+    (data) => !data.salesStartAt || !data.salesEndAt || data.salesEndAt > data.salesStartAt,
+    { message: t("salesEndAfterStart"), path: ["salesEndAt"] },
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------
 
-export const createEventSchema = z
-  .object({
-    title: z.string().trim().min(3).max(160),
-    summary: z.string().trim().min(3).max(300),
-    description: z.string().trim().min(3).max(10000),
-    categoryId: z.string().trim().min(1, "Catégorie requise"),
-    venue: venueSchema,
-    coverImage: z.string().url().optional().or(z.literal("")),
-    gallery: z.array(z.string().url()).max(12).default([]),
-    city: z.string().trim().min(2).max(80),
-    startAt: z.coerce.date(),
-    endAt: z.coerce.date(),
-    salesStartAt: z.coerce.date(),
-    salesEndAt: z.coerce.date(),
-    visibility: z.enum(["PUBLIC", "UNLISTED"]).default("PUBLIC"),
-    ticketTypes: z.array(ticketTypeSchema).min(1, "Au moins un type de billet est requis"),
-  })
-  .refine((data) => data.endAt > data.startAt, {
-    message: "La date de fin doit être après la date de début",
-    path: ["endAt"],
-  })
-  .refine((data) => data.salesEndAt > data.salesStartAt, {
-    message: "La fin des ventes doit être après le début des ventes",
-    path: ["salesEndAt"],
-  });
+const createEventSchema = createEventValidationSchema((key) => DEFAULT_MESSAGES[key]);
 export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+export function createEventValidationSchema(t: Translate) {
+  return z
+    .object({
+      title: z.string().trim().min(3).max(160),
+      summary: z.string().trim().min(3).max(300),
+      description: z.string().trim().min(3).max(10000),
+      categoryId: z.string().trim().min(1, t("categoryRequired")),
+      venue: venueSchema,
+      coverImage: z.string().url().optional().or(z.literal("")),
+      gallery: z.array(z.string().url()).max(12).default([]),
+      city: z.string().trim().min(2).max(80),
+      startAt: z.coerce.date(),
+      endAt: z.coerce.date(),
+      salesStartAt: z.coerce.date(),
+      salesEndAt: z.coerce.date(),
+      visibility: z.enum(["PUBLIC", "UNLISTED"]).default("PUBLIC"),
+      ticketTypes: z.array(createTicketTypeSchema(t)).min(1, t("atLeastOneTicketType")),
+    })
+    .refine((data) => data.endAt > data.startAt, {
+      message: t("endAfterStart"),
+      path: ["endAt"],
+    })
+    .refine((data) => data.salesEndAt > data.salesStartAt, {
+      message: t("salesEndAfterStart"),
+      path: ["salesEndAt"],
+    });
+}
 
 export const updateEventSchema = z.object({
   title: z.string().trim().min(3).max(160).optional(),

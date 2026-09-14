@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
 
 export function Pagination({
@@ -11,6 +12,7 @@ export function Pagination({
   totalPages: number;
   onChange: (page: number) => void;
 }) {
+  const t = useTranslations("common");
   if (totalPages <= 1) return null;
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
@@ -24,7 +26,7 @@ export function Pagination({
         disabled={page === 1}
         className="focus-ring rounded-lg px-3 py-2 text-sm text-ink/70 hover:bg-sand disabled:opacity-30"
       >
-        Précédent
+        {t("previous")}
       </button>
       {pages.map((p, i) => (
         <div key={p} className="flex items-center gap-1.5">
@@ -45,7 +47,7 @@ export function Pagination({
         disabled={page === totalPages}
         className="focus-ring rounded-lg px-3 py-2 text-sm text-ink/70 hover:bg-sand disabled:opacity-30"
       >
-        Suivant
+        {t("next")}
       </button>
     </nav>
   );

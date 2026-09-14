@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import type { UserRole } from "@/types";
 import { useAuth } from "@/lib/auth-context";
 import { LoadingState } from "@/components/ui/States";

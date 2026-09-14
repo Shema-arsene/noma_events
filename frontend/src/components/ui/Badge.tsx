@@ -6,9 +6,9 @@ const toneClasses: Record<Tone, string> = {
   neutral: "bg-sand text-ink/70",
   gold: "bg-gold/15 text-gold-dark",
   teal: "bg-teal/10 text-teal-dark",
-  success: "bg-emerald-100 text-emerald-700",
-  warning: "bg-amber-100 text-amber-800",
-  danger: "bg-red-100 text-red-700",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+  danger: "bg-danger-soft text-danger",
 };
 
 export function Badge({ children, tone = "neutral", className }: { children: React.ReactNode; tone?: Tone; className?: string }) {

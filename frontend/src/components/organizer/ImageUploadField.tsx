@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { apiPost, ApiRequestError } from "@/lib/api";
 import { Label } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +16,7 @@ export function ImageUploadField({
   value: string;
   onChange: (url: string) => void;
 }) {
+  const t = useTranslations("imageUpload");
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export function ImageUploadField({
       const { data } = await apiPost<{ url: string }>("/uploads", formData);
       onChange(data.url);
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : "Échec du téléversement");
+      setError(err instanceof ApiRequestError ? err.message : t("uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -39,9 +42,11 @@ export function ImageUploadField({
       <div className="flex items-center gap-3">
         {value ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={value} alt="" className="h-16 w-24 rounded-lg object-cover" />
+          <img src={value} alt="" className="h-16 w-24 rounded-lg border border-ink/10 object-cover" />
         ) : (
-          <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-sand text-xs text-ink/40">Aucune image</div>
+          <div className="flex h-16 w-24 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-ink/15 bg-sand/40 text-ink/30">
+            <Upload className="h-4 w-4" />
+          </div>
         )}
         <input
           ref={inputRef}
@@ -54,10 +59,10 @@ export function ImageUploadField({
           }}
         />
         <Button type="button" variant="outline" size="sm" loading={uploading} onClick={() => inputRef.current?.click()}>
-          {value ? "Changer l'image" : "Téléverser une image"}
+          {value ? t("changeImage") : t("uploadImage")}
         </Button>
       </div>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>
   );
 }

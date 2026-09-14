@@ -1,23 +1,39 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
+import {
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  QrCode,
+  Receipt,
+  Search,
+  ShieldCheck,
+  Ticket,
+  UserRound,
+} from "lucide-react";
 import { UserRole } from "@/types";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/cn";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
-
-const NAV_LINKS = [
-  { href: "/events", label: "Découvrir" },
-  { href: "/events?free=true", label: "Gratuit" },
-];
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/Sheet";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 export function Header() {
+  const t = useTranslations("nav");
   const { user, logout, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
   const [q, setQ] = useState("");
+
+  const NAV_LINKS = [
+    { href: "/events", label: t("discover") },
+    { href: "/events?free=true", label: t("free") },
+  ];
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -27,7 +43,6 @@ export function Header() {
 
   async function handleLogout() {
     await logout();
-    setAccountOpen(false);
     router.push("/");
     router.refresh();
   }
@@ -42,7 +57,14 @@ export function Header() {
 
         <nav className="hidden items-center gap-6 md:flex">
           {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="focus-ring text-sm font-medium text-ink/70 hover:text-ink">
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "focus-ring text-sm font-medium text-ink/70 transition-colors hover:text-ink",
+                pathname === link.href.split("?")[0] && "text-ink",
+              )}
+            >
               {link.label}
             </Link>
           ))}
@@ -52,132 +74,156 @@ export function Header() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher un événement, un organisateur..."
+            placeholder={t("searchPlaceholder")}
             className="focus-ring w-full rounded-l-full border border-ink/15 bg-white px-4 py-2 text-sm"
           />
-          <button className="focus-ring rounded-r-full bg-ink px-4 py-2 text-sm font-medium text-white">Chercher</button>
+          <button
+            aria-label={t("search")}
+            className="focus-ring flex items-center rounded-r-full bg-ink px-3.5 text-sm font-medium text-white hover:bg-black"
+          >
+            <Search className="h-4 w-4" />
+          </button>
         </form>
 
         <div className="hidden items-center gap-3 md:flex">
+          <LocaleSwitcher />
           {loading ? null : user ? (
-            <div className="relative">
-              <button
-                onClick={() => setAccountOpen((v) => !v)}
-                className="focus-ring flex items-center gap-2 rounded-full border border-ink/15 bg-white px-3 py-1.5 text-sm font-medium"
-              >
-                {user.name.split(" ")[0]}
-              </button>
-              {accountOpen && (
-                <div
-                  className="absolute right-0 mt-2 w-56 rounded-xl border border-ink/10 bg-white p-1.5 shadow-card"
-                  onMouseLeave={() => setAccountOpen(false)}
-                >
-                  <AccountLinks role={user.role} onNavigate={() => setAccountOpen(false)} />
-                  <button
-                    onClick={handleLogout}
-                    className="focus-ring w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Se déconnecter
-                  </button>
-                </div>
-              )}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="focus-ring flex items-center gap-2 rounded-full border border-ink/15 bg-white py-1.5 pl-1.5 pr-3.5 text-sm font-medium hover:border-ink/25">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ink/8 text-xs font-semibold text-ink/70">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                  {user.name.split(" ")[0]}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-60">
+                <AccountLinks role={user.role} />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem danger onSelect={handleLogout}>
+                  <LogOut className="h-4 w-4" /> {t("logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <>
               <Link href="/login" className="focus-ring text-sm font-medium text-ink/70 hover:text-ink">
-                Connexion
+                {t("login")}
               </Link>
               <Button size="sm" onClick={() => router.push("/register")}>
-                S&apos;inscrire
+                {t("register")}
               </Button>
             </>
           )}
         </div>
 
-        <button
-          className="focus-ring rounded-lg p-2 md:hidden"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Ouvrir le menu"
-        >
-          <div className="space-y-1.5">
-            <span className="block h-0.5 w-6 bg-ink" />
-            <span className="block h-0.5 w-6 bg-ink" />
-            <span className="block h-0.5 w-6 bg-ink" />
-          </div>
-        </button>
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+          <SheetTrigger asChild>
+            <button className="focus-ring rounded-lg p-2 md:hidden" aria-label={t("openMenu")}>
+              <Menu className="h-5 w-5" />
+            </button>
+          </SheetTrigger>
+          <SheetContent className="p-5">
+            <SheetTitle className="font-display text-lg font-bold text-ink">{t("menu")}</SheetTitle>
+            <form onSubmit={handleSearch} className="mt-5 flex">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("searchShort")}
+                className="focus-ring w-full rounded-l-full border border-ink/15 bg-white px-4 py-2 text-sm"
+              />
+              <button className="focus-ring rounded-r-full bg-ink px-3.5 text-sm font-medium text-white">
+                <Search className="h-4 w-4" />
+              </button>
+            </form>
+            <nav className="mt-4 flex flex-col gap-1">
+              {NAV_LINKS.map((link) => (
+                <SheetClose asChild key={link.href}>
+                  <Link href={link.href} className="focus-ring rounded-lg px-2.5 py-2.5 text-sm font-medium text-ink/80 hover:bg-sand">
+                    {link.label}
+                  </Link>
+                </SheetClose>
+              ))}
+              <div className="my-2 h-px bg-ink/8" />
+              <LocaleSwitcher variant="mobile" />
+              {user ? (
+                <>
+                  <div className="my-2 h-px bg-ink/8" />
+                  <MobileAccountLinks role={user.role} />
+                  <button
+                    onClick={handleLogout}
+                    className="focus-ring flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-sm font-medium text-danger hover:bg-danger-soft"
+                  >
+                    <LogOut className="h-4 w-4" /> {t("logout")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="my-2 h-px bg-ink/8" />
+                  <SheetClose asChild>
+                    <Link href="/login" className="focus-ring rounded-lg px-2.5 py-2.5 text-sm font-medium text-ink/80 hover:bg-sand">
+                      {t("login")}
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/register" className="focus-ring rounded-lg px-2.5 py-2.5 text-sm font-medium text-ink/80 hover:bg-sand">
+                      {t("register")}
+                    </Link>
+                  </SheetClose>
+                </>
+              )}
+            </nav>
+          </SheetContent>
+        </Sheet>
       </div>
-
-      {menuOpen && (
-        <div className="border-t border-ink/10 bg-ivory px-4 pb-4 md:hidden">
-          <form onSubmit={handleSearch} className="mt-3 flex">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher..."
-              className="focus-ring w-full rounded-l-full border border-ink/15 bg-white px-4 py-2 text-sm"
-            />
-            <button className="focus-ring rounded-r-full bg-ink px-4 py-2 text-sm font-medium text-white">OK</button>
-          </form>
-          <nav className="mt-3 flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="focus-ring rounded-lg px-2 py-2 text-sm font-medium text-ink/80 hover:bg-sand"
-              >
-                {link.label}
-              </Link>
-            ))}
-            {user ? (
-              <>
-                <AccountLinks role={user.role} onNavigate={() => setMenuOpen(false)} />
-                <button
-                  onClick={handleLogout}
-                  className="focus-ring rounded-lg px-2 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-                >
-                  Se déconnecter
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" onClick={() => setMenuOpen(false)} className="focus-ring rounded-lg px-2 py-2 text-sm font-medium text-ink/80 hover:bg-sand">
-                  Connexion
-                </Link>
-                <Link href="/register" onClick={() => setMenuOpen(false)} className="focus-ring rounded-lg px-2 py-2 text-sm font-medium text-ink/80 hover:bg-sand">
-                  S&apos;inscrire
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      )}
     </header>
   );
 }
 
-function AccountLinks({ role, onNavigate }: { role: UserRole; onNavigate: () => void }) {
+function useRoleLinks(role: UserRole) {
+  const t = useTranslations("nav");
   const links = [
-    { href: "/account/tickets", label: "Mes billets" },
-    { href: "/account/orders", label: "Mes commandes" },
-    { href: "/account", label: "Mon profil" },
+    { href: "/account/tickets", label: t("myTickets"), icon: Ticket },
+    { href: "/account/orders", label: t("myOrders"), icon: Receipt },
+    { href: "/account", label: t("myProfile"), icon: UserRound },
   ];
   if (role === UserRole.ORGANIZER || role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
-    links.push({ href: "/organizer", label: "Espace organisateur" });
+    links.push({ href: "/organizer", label: t("organizerSpace"), icon: LayoutDashboard });
   }
   if (role === UserRole.EVENT_STAFF || role === UserRole.ORGANIZER || role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
-    links.push({ href: "/scanner", label: "Scanner" });
+    links.push({ href: "/scanner", label: t("scanner"), icon: QrCode });
   }
   if (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
-    links.push({ href: "/admin", label: "Administration" });
+    links.push({ href: "/admin", label: t("administration"), icon: ShieldCheck });
   }
+  return links;
+}
 
+function AccountLinks({ role }: { role: UserRole }) {
+  const links = useRoleLinks(role);
   return (
     <>
       {links.map((link) => (
-        <Link key={link.href} href={link.href} onClick={onNavigate} className="focus-ring block rounded-lg px-3 py-2 text-sm text-ink/80 hover:bg-sand">
-          {link.label}
-        </Link>
+        <DropdownMenuItem key={link.href} asChild>
+          <Link href={link.href}>
+            <link.icon className="h-4 w-4 text-ink/50" /> {link.label}
+          </Link>
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
+function MobileAccountLinks({ role }: { role: UserRole }) {
+  const links = useRoleLinks(role);
+  return (
+    <>
+      {links.map((link) => (
+        <SheetClose asChild key={link.href}>
+          <Link href={link.href} className="focus-ring flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm font-medium text-ink/80 hover:bg-sand">
+            <link.icon className="h-4 w-4 text-ink/50" /> {link.label}
+          </Link>
+        </SheetClose>
       ))}
     </>
   );

@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export function QrScanner({ onScan, disabled }: { onScan: (payload: string) => void; disabled?: boolean }) {
+  const t = useTranslations("scanner");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
@@ -27,7 +29,7 @@ export function QrScanner({ onScan, disabled }: { onScan: (payload: string) => v
           tick();
         }
       } catch {
-        setCameraError("Caméra indisponible. Utilisez la saisie manuelle ci-dessous.");
+        setCameraError(t("cameraUnavailable"));
       }
     }
 
@@ -74,11 +76,11 @@ export function QrScanner({ onScan, disabled }: { onScan: (payload: string) => v
         )}
         {!cameraActive && !cameraError && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-white/70">
-            Activation de la caméra...
+            {t("activatingCamera")}
           </div>
         )}
       </div>
-      {cameraError && <p className="mt-2 text-center text-sm text-amber-700">{cameraError}</p>}
+      {cameraError && <p className="mt-2 text-center text-sm text-warning">{cameraError}</p>}
 
       <form
         className="mt-4 flex gap-2"
@@ -91,14 +93,16 @@ export function QrScanner({ onScan, disabled }: { onScan: (payload: string) => v
         }}
       >
         <Input
-          placeholder="Ou saisissez le code du billet manuellement"
+          placeholder={t("manualCodePlaceholder")}
           value={manualCode}
           onChange={(e) => setManualCode(e.target.value)}
+          disabled={disabled}
         />
-        <Button type="submit" variant="outline" disabled={disabled}>
-          Valider
+        <Button type="submit" variant="outline" loading={disabled}>
+          {t("validate")}
         </Button>
       </form>
+      {disabled && <p className="mt-2 text-center text-xs text-ink/40">{t("scanning")}</p>}
     </div>
   );
 }

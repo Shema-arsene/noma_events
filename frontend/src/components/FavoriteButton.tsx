@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiPost } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
 export function FavoriteButton({ eventId, initialFavorited = false }: { eventId: string; initialFavorited?: boolean }) {
+  const t = useTranslations("eventDetail");
   const { user } = useAuth();
   const router = useRouter();
   const [favorited, setFavorited] = useState(initialFavorited);
@@ -31,7 +33,7 @@ export function FavoriteButton({ eventId, initialFavorited = false }: { eventId:
       onClick={toggle}
       disabled={loading}
       aria-pressed={favorited}
-      aria-label={favorited ? "Retirer des favoris" : "Ajouter aux favoris"}
+      aria-label={favorited ? t("removeFavorite") : t("addFavorite")}
       className={cn(
         "focus-ring flex h-9 w-9 items-center justify-center rounded-full border transition-colors",
         favorited ? "border-gold bg-gold/15 text-gold-dark" : "border-ink/15 bg-white text-ink/60 hover:text-ink",

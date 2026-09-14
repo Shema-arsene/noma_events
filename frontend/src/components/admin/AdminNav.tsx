@@ -1,20 +1,23 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { CalendarDays, CreditCard, LayoutGrid, Receipt, ShieldCheck, Users } from "lucide-react";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 
-const LINKS = [
-  { href: "/admin", label: "Aperçu" },
-  { href: "/admin/events", label: "Événements" },
-  { href: "/admin/organizers", label: "Organisateurs" },
-  { href: "/admin/users", label: "Utilisateurs" },
-  { href: "/admin/orders", label: "Commandes" },
-  { href: "/admin/payments", label: "Paiements" },
-];
-
 export function AdminNav() {
+  const t = useTranslations("adminNav");
   const pathname = usePathname();
+
+  const LINKS = [
+    { href: "/admin", label: t("overview"), icon: LayoutGrid },
+    { href: "/admin/events", label: t("events"), icon: CalendarDays },
+    { href: "/admin/organizers", label: t("organizers"), icon: ShieldCheck },
+    { href: "/admin/users", label: t("users"), icon: Users },
+    { href: "/admin/orders", label: t("orders"), icon: Receipt },
+    { href: "/admin/payments", label: t("payments"), icon: CreditCard },
+  ];
+
   return (
     <div className="border-b border-ink/10 bg-white">
       <div className="container-page flex gap-1 overflow-x-auto">
@@ -25,11 +28,11 @@ export function AdminNav() {
               key={link.href}
               href={link.href}
               className={cn(
-                "focus-ring whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium",
+                "focus-ring flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium",
                 active ? "border-teal text-teal" : "border-transparent text-ink/60 hover:text-ink",
               )}
             >
-              {link.label}
+              <link.icon className="h-4 w-4" /> {link.label}
             </Link>
           );
         })}

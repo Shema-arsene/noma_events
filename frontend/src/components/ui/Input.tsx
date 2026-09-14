@@ -11,7 +11,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, error, ...props }, ref) => (
   <input
     ref={ref}
-    className={cn(fieldClasses, error && "border-red-400 focus-visible:ring-red-400", className)}
+    className={cn(fieldClasses, error && "border-danger/60 focus-visible:ring-danger/60", className)}
     {...props}
   />
 ));
@@ -24,7 +24,7 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, error, ...props }, ref) => (
   <textarea
     ref={ref}
-    className={cn(fieldClasses, "min-h-[120px] resize-y", error && "border-red-400 focus-visible:ring-red-400", className)}
+    className={cn(fieldClasses, "min-h-[120px] resize-y", error && "border-danger/60 focus-visible:ring-danger/60", className)}
     {...props}
   />
 ));
@@ -35,7 +35,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(({ className, error, children, ...props }, ref) => (
-  <select ref={ref} className={cn(fieldClasses, error && "border-red-400 focus-visible:ring-red-400", className)} {...props}>
+  <select ref={ref} className={cn(fieldClasses, error && "border-danger/60 focus-visible:ring-danger/60", className)} {...props}>
     {children}
   </select>
 ));
@@ -52,5 +52,5 @@ export function Label({ children, htmlFor, required }: { children: React.ReactNo
 
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1 text-xs text-red-600">{message}</p>;
+  return <p className="mt-1 text-xs text-danger">{message}</p>;
 }

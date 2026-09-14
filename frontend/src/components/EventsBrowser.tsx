@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
+import { Search, X } from "lucide-react";
 import type { CategoryDTO, EventDTO } from "@/types";
 import { GABON_CITIES } from "@/types";
 import { apiGet } from "@/lib/api";
@@ -10,6 +12,7 @@ import { EventCard, EventCardSkeleton } from "@/components/EventCard";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { Pagination } from "@/components/ui/Pagination";
 import { Select } from "@/components/ui/Input";
+import { useRouter } from "@/i18n/navigation";
 
 function whenToRange(when: string | null): { dateFrom?: string; dateTo?: string } {
   if (!when) return {};
@@ -38,11 +41,13 @@ function whenToRange(when: string | null): { dateFrom?: string; dateTo?: string 
 }
 
 export function EventsBrowser() {
+  const t = useTranslations("eventsBrowser");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [page, setPage] = useState(1);
 
   const q = searchParams.get("q") ?? "";
+  const [qInput, setQInput] = useState(q);
   const city = searchParams.get("city") ?? "";
   const category = searchParams.get("category") ?? "";
   const free = searchParams.get("free") ?? "";
@@ -85,11 +90,38 @@ export function EventsBrowser() {
     [router, searchParams],
   );
 
+  function handleSearchSubmit(e: FormEvent) {
+    e.preventDefault();
+    updateFilter("q", qInput.trim());
+  }
+
   return (
     <div className="mt-6">
       <div className="flex flex-wrap gap-3 rounded-card border border-ink/10 bg-white p-4">
+        <form onSubmit={handleSearchSubmit} className="focus-within:ring-2 focus-within:ring-teal/40 flex w-full items-center gap-2 rounded-lg border border-ink/15 px-3 sm:w-64">
+          <Search className="h-4 w-4 shrink-0 text-ink/40" />
+          <input
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="w-full py-2.5 text-sm text-ink outline-none placeholder:text-ink/40"
+          />
+          {qInput && (
+            <button
+              type="button"
+              onClick={() => {
+                setQInput("");
+                updateFilter("q", "");
+              }}
+              className="focus-ring rounded p-0.5 text-ink/30 hover:text-ink"
+              aria-label={t("clearSearch")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </form>
         <Select value={city} onChange={(e) => updateFilter("city", e.target.value)} className="w-auto min-w-[160px]">
-          <option value="">Toutes les villes</option>
+          <option value="">{t("allCities")}</option>
           {GABON_CITIES.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -97,7 +129,7 @@ export function EventsBrowser() {
           ))}
         </Select>
         <Select value={category} onChange={(e) => updateFilter("category", e.target.value)} className="w-auto min-w-[160px]">
-          <option value="">Toutes les catégories</option>
+          <option value="">{t("allCategories")}</option>
           {categories?.map((c) => (
             <option key={c.id} value={c.slug}>
               {c.name}
@@ -105,24 +137,25 @@ export function EventsBrowser() {
           ))}
         </Select>
         <Select value={free} onChange={(e) => updateFilter("free", e.target.value)} className="w-auto min-w-[140px]">
-          <option value="">Payant et gratuit</option>
-          <option value="true">Gratuit</option>
-          <option value="false">Payant</option>
+          <option value="">{t("paidAndFree")}</option>
+          <option value="true">{t("free")}</option>
+          <option value="false">{t("paid")}</option>
         </Select>
         <Select value={sort} onChange={(e) => updateFilter("sort", e.target.value)} className="w-auto min-w-[140px]">
-          <option value="date">Date</option>
-          <option value="newest">Plus récent</option>
-          <option value="popularity">Popularité</option>
+          <option value="date">{t("sortDate")}</option>
+          <option value="newest">{t("sortNewest")}</option>
+          <option value="popularity">{t("sortPopularity")}</option>
         </Select>
         {(city || category || free || when || q) && (
           <button
             onClick={() => {
               setPage(1);
+              setQInput("");
               router.replace("/events", { scroll: false });
             }}
             className="focus-ring ml-auto rounded-lg px-3 py-2 text-sm font-medium text-teal hover:underline"
           >
-            Réinitialiser
+            {t("reset")}
           </button>
         )}
       </div>
@@ -135,9 +168,9 @@ export function EventsBrowser() {
             ))}
           </div>
         ) : isError ? (
-          <ErrorState message="Impossible de charger les événements." onRetry={() => refetch()} />
+          <ErrorState message={t("loadError")} onRetry={() => refetch()} />
         ) : !data || data.data.length === 0 ? (
-          <EmptyState description="Essayez d'ajuster vos filtres ou votre recherche." />
+          <EmptyState description={t("adjustFilters")} />
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

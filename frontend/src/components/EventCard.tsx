@@ -1,10 +1,14 @@
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Ticket } from "lucide-react";
 import type { EventDTO } from "@/types";
 import { formatDateShort, formatXaf } from "@/lib/format";
 import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { Link } from "@/i18n/navigation";
 
 export function EventCard({ event }: { event: EventDTO }) {
+  const t = useTranslations("eventCard");
   return (
     <Link
       href={`/events/${event.slug}`}
@@ -20,7 +24,10 @@ export function EventCard({ event }: { event: EventDTO }) {
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-ink/30">Noma Events</div>
+          <div className="flex h-full flex-col items-center justify-center gap-1.5 text-ink/25">
+            <Ticket className="h-8 w-8" strokeWidth={1.5} />
+            <span className="text-xs font-medium">Noma Events</span>
+          </div>
         )}
         <div className="absolute left-3 top-3 rounded-lg bg-white/95 px-2.5 py-1.5 text-center leading-none shadow">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-teal">
@@ -42,7 +49,7 @@ export function EventCard({ event }: { event: EventDTO }) {
         </p>
         <div className="mt-auto flex items-center justify-between pt-2">
           <span className="text-sm font-semibold text-gold-dark">
-            {event.isFree ? "Entrée gratuite" : event.minPriceXaf !== null ? `Dès ${formatXaf(event.minPriceXaf)}` : "—"}
+            {event.isFree ? t("free") : event.minPriceXaf !== null ? t("fromPrice", { price: formatXaf(event.minPriceXaf) }) : "—"}
           </span>
           {event.organizer && <span className="line-clamp-1 max-w-[45%] text-xs text-ink/40">{event.organizer.name}</span>}
         </div>
@@ -54,11 +61,11 @@ export function EventCard({ event }: { event: EventDTO }) {
 export function EventCardSkeleton() {
   return (
     <div className="flex flex-col overflow-hidden rounded-card border border-ink/10 bg-white shadow-card">
-      <div className="aspect-[4/3] w-full animate-pulse bg-sand" />
+      <Skeleton className="aspect-[4/3] w-full rounded-none" />
       <div className="flex flex-col gap-2 p-4">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-sand" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-sand" />
-        <div className="h-4 w-1/3 animate-pulse rounded bg-sand" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-4 w-1/3" />
       </div>
     </div>
   );

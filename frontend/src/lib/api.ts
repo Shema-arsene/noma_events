@@ -3,6 +3,21 @@ import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./token
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
+// This module sits outside the React tree (used from Server Components and
+// plain fetch helpers alike), so it can't call useTranslations(). The locale
+// is instead read off <html lang> — which app/[locale]/layout.tsx always
+// sets — falling back to the app's default locale for the rare server-side
+// fetch that fails before any HTML has been sent.
+const FALLBACK_MESSAGES: Record<"fr" | "en", { network: string; generic: string }> = {
+  fr: { network: "Impossible de contacter le serveur. Vérifiez votre connexion.", generic: "Une erreur est survenue. Veuillez réessayer." },
+  en: { network: "Unable to reach the server. Check your connection.", generic: "Something went wrong. Please try again." },
+};
+
+function fallbackMessages() {
+  const lang = typeof document !== "undefined" ? document.documentElement.lang : "fr";
+  return FALLBACK_MESSAGES[lang === "en" ? "en" : "fr"];
+}
+
 export class ApiRequestError extends Error {
   status: number;
   code: string;
@@ -75,7 +90,7 @@ async function rawFetch(path: string, options: FetchOptions): Promise<Response> 
       cache: rest.cache ?? "no-store",
     });
   } catch {
-    throw new ApiRequestError(0, "NETWORK_ERROR", "Impossible de contacter le serveur. Vérifiez votre connexion.");
+    throw new ApiRequestError(0, "NETWORK_ERROR", fallbackMessages().network);
   }
 }
 
@@ -104,7 +119,7 @@ export async function apiFetch<T>(
     throw new ApiRequestError(
       res.status,
       err?.error?.code ?? "UNKNOWN_ERROR",
-      err?.error?.message ?? "Une erreur est survenue. Veuillez réessayer.",
+      err?.error?.message ?? fallbackMessages().generic,
       err?.error?.details,
     );
   }
